@@ -54,6 +54,7 @@ func (p *Point) Add(p1, p2 *Point) *Point {
 	if p1.IsIdentity() {
 		return p.Set(p2)
 	}
+
 	if p2.IsIdentity() {
 		return p.Set(p1)
 	}
@@ -125,8 +126,15 @@ func (p *Point) Inverse(pi *Point) *Point {
 	return p
 }
 
-//Set sets p to the pi and returns p
+//Set sets p to the value pi and returns p. This clones the bigints withitn Point.
 func (p *Point) Set(pi *Point) *Point {
-	*p = *pi
+	x := *(pi.X)
+	y := *(pi.Y)
+	n := pi.Nonzero
+	c := pi.Curve
+	p.X = &x
+	p.Y = &y
+	p.Nonzero = n
+	p.Curve = c
 	return p
 }
