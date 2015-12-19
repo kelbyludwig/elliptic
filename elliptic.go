@@ -1,8 +1,6 @@
 package elliptic
 
-import (
-	"math/big"
-)
+import "math/big"
 
 //Curve represents an equation of the form: y^2 = x^3 + A*x + B
 type Curve struct {
