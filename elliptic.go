@@ -5,7 +5,7 @@ import (
 	"math/big"
 )
 
-var debugAdd bool = true
+var debugAdd bool = false
 var debugScalarMult bool = false
 var debugSet bool = false
 var debugInverse bool = false
@@ -103,8 +103,7 @@ func Add(p1, p2 *Point) *Point {
 		m.Exp(p1.X, big.NewInt(2), p1.Curve.P)
 		m.Mul(m, big.NewInt(3))
 		m.Add(m, p1.Curve.A)
-		rhs := big.NewInt(0)
-		rhs.Mul(big.NewInt(2), p1.Y)
+		rhs := new(big.Int).Mul(big.NewInt(2), p1.Y)
 		rhs.ModInverse(rhs, p1.Curve.P)
 		m.Mul(m, rhs)
 	} else {
@@ -112,9 +111,10 @@ func Add(p1, p2 *Point) *Point {
 			fmt.Printf("[ADD] p1 is not equal to p2: (%v, %v) != (%v, %v)\n", p1.X, p1.Y, p2.X, p2.Y)
 		}
 		//This is just an ugly way of saying: m := (p2.Y - p1.Y) / (p2.X - p1.X)
-		m.Sub(p2.Y, p1.Y)
-		rhs := big.NewInt(0)
-		rhs.Sub(p2.X, p1.X)
+		//ORIG:m.Sub(p2.Y, p1.Y)
+		//ORIG:rhs := new(big.Int).Sub(p2.X, p1.X)
+		m.Sub(p1.Y, p2.Y)
+		rhs := new(big.Int).Sub(p1.X, p2.X)
 		rhs.ModInverse(rhs, p1.Curve.P)
 		m.Mul(m, rhs)
 	}
@@ -135,19 +135,16 @@ func Add(p1, p2 *Point) *Point {
 	y.Mod(y, p1.Curve.P)
 
 	res := NewPoint(x, y, p1.Curve)
-	if debugAdd {
-		fmt.Printf("[ADD] POINT ADDITION: (%v,%v) + (%v,%v) = (%v, %v)\n", p1.X, p1.Y, p2.X, p2.Y, res.X, res.Y)
-	}
 	return res
 }
 
-//ScalarMult sets p to k*pi and returns p
+//ScalarMult returns k*pi. If k is zero the identity point is returned
 func ScalarMult(pi *Point, k *big.Int) *Point {
-	if debugScalarMult {
-		fmt.Printf("[MULT] SCALAR MULT: %v * (%v, %v)\n", k, pi.X, pi.Y)
+	if big.NewInt(0).Cmp(k) == 0 {
+		return Identity(pi.Curve)
 	}
 	p := new(Point).Set(pi)
-	for i := big.NewInt(0); i.Cmp(k) != 0; i.Add(i, big.NewInt(1)) {
+	for i := big.NewInt(1); i.Cmp(k) != 0; i.Add(i, big.NewInt(1)) {
 		if debugScalarMult {
 			fmt.Printf("[MULT] %v of %v: ", new(big.Int).Add(i, big.NewInt(1)), k)
 			fmt.Printf("p:(%v, %v) + pi:(%v, %v) = ", p.X, p.Y, pi.X, pi.Y)
@@ -186,21 +183,9 @@ func Inverse(pi *Point) *Point {
 
 //Set sets p to the value pi and returns p. This clones the bigints withitn Point.
 func (p *Point) Set(pi *Point) *Point {
-	if debugSet {
-		fmt.Printf("[SET] Setting p to pi = (%v, %v)\n", pi.X, pi.Y)
-		fmt.Printf("[SET] &p.X: %v - &pi.X: %v\n", &p, &pi)
-	}
 	p.X = new(big.Int).Set(pi.X)
 	p.Y = new(big.Int).Set(pi.Y)
 	p.Nonzero = pi.Nonzero
 	p.Curve = pi.Curve
-
-	if debugSet {
-		fmt.Printf("[SET] pi.X after set: %v\n", pi.X)
-		fmt.Printf("[SET] pi.Y after set: %v\n", pi.Y)
-		fmt.Printf("[SET] result point: (%v, %v)\n", p.X, p.Y)
-		fmt.Printf("[SET] &result.X: %v - &pi.X: %v\n", &(p.X), &(pi.X))
-		fmt.Printf("[SET] &result.Y: %v - &pi.Y: %v\n", &(p.Y), &(pi.Y))
-	}
 	return p
 }
