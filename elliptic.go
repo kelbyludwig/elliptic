@@ -5,8 +5,8 @@ import (
 	"math/big"
 )
 
-var debugAdd bool = false
-var debugScalarMult bool = true
+var debugAdd bool = true
+var debugScalarMult bool = false
 var debugSet bool = false
 var debugInverse bool = false
 
@@ -63,8 +63,6 @@ func Add(p1, p2 *Point) *Point {
 
 	if debugAdd {
 		fmt.Printf("[ADD] POINT ADDITION: (%v,%v) + (%v,%v)\n", p1.X, p1.Y, p2.X, p2.Y)
-		fmt.Printf("[ADD] Original Addrs: &p1.X: %v - &p1.Y: %v\n", &p1.X, &p1.Y)
-		fmt.Printf("[ADD] Original Addrs: &p2.X: %v - &p2.Y: %v\n", &p2.X, &p2.Y)
 	}
 
 	if p1.IsIdentity() {
@@ -87,6 +85,10 @@ func Add(p1, p2 *Point) *Point {
 	inverse := new(Point).Set(p2)
 	inverse = Inverse(inverse)
 
+	if debugAdd {
+		fmt.Printf("[ADD] p2's inverse: (%v, %v)\n", inverse.X, inverse.Y)
+	}
+
 	if p1.Equals(inverse) {
 		if debugAdd {
 			fmt.Printf("[ADD] p1 is equal to the inverse of p2\n")
@@ -97,25 +99,24 @@ func Add(p1, p2 *Point) *Point {
 
 	m := big.NewInt(0)
 	if p1.Equals(p2) {
-		if debugAdd {
-			fmt.Printf("[ADD] p1 is equal to p2\n")
-		}
 		//This is just an ugly way of saying: m := (3 * p1.X ^ 2 + a) / 2 * p1.Y
 		m.Exp(p1.X, big.NewInt(2), p1.Curve.P)
 		m.Mul(m, big.NewInt(3))
 		m.Add(m, p1.Curve.A)
 		rhs := big.NewInt(0)
 		rhs.Mul(big.NewInt(2), p1.Y)
-		m.Div(m, rhs)
+		rhs.ModInverse(rhs, p1.Curve.P)
+		m.Mul(m, rhs)
 	} else {
 		if debugAdd {
-			fmt.Printf("[ADD] p1 is not equal to p2\n")
+			fmt.Printf("[ADD] p1 is not equal to p2: (%v, %v) != (%v, %v)\n", p1.X, p1.Y, p2.X, p2.Y)
 		}
 		//This is just an ugly way of saying: m := (p2.Y - p1.Y) / (p2.X - p1.X)
 		m.Sub(p2.Y, p1.Y)
 		rhs := big.NewInt(0)
 		rhs.Sub(p2.X, p1.X)
-		m.Div(m, rhs)
+		rhs.ModInverse(rhs, p1.Curve.P)
+		m.Mul(m, rhs)
 	}
 
 	x := big.NewInt(0)
