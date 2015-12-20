@@ -50,7 +50,7 @@ func Identity(c *Curve) *Point {
 	return p
 }
 
-//Add sets p to the result of p1 + p2 and returns p
+//Add returns the result of p1 + p2
 func Add(p1, p2 *Point) *Point {
 
 	if p1.IsIdentity() {
@@ -143,7 +143,7 @@ func Inverse(pi *Point) *Point {
 	return p
 }
 
-//Set sets p to the value pi and returns p. This clones the bigints withitn Point.
+//Set sets p to the value pi and returns p. This clones the bigints within Point.
 func (p *Point) Set(pi *Point) *Point {
 	p.X = new(big.Int).Set(pi.X)
 	p.Y = new(big.Int).Set(pi.Y)
