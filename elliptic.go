@@ -5,7 +5,7 @@ import (
 	"math/big"
 )
 
-var debugAdd bool = false
+var debugAdd bool = true
 var debugScalarMult bool = false
 var debugSet bool = false
 var debugInverse bool = false
@@ -79,15 +79,8 @@ func Add(p1, p2 *Point) *Point {
 		return new(Point).Set(p1)
 	}
 
-	if debugAdd {
-		fmt.Printf("[ADD] Setting up p2's inverse\n")
-	}
 	inverse := new(Point).Set(p2)
 	inverse = Inverse(inverse)
-
-	if debugAdd {
-		fmt.Printf("[ADD] p2's inverse: (%v, %v)\n", inverse.X, inverse.Y)
-	}
 
 	if p1.Equals(inverse) {
 		if debugAdd {
@@ -111,10 +104,8 @@ func Add(p1, p2 *Point) *Point {
 			fmt.Printf("[ADD] p1 is not equal to p2: (%v, %v) != (%v, %v)\n", p1.X, p1.Y, p2.X, p2.Y)
 		}
 		//This is just an ugly way of saying: m := (p2.Y - p1.Y) / (p2.X - p1.X)
-		//ORIG:m.Sub(p2.Y, p1.Y)
-		//ORIG:rhs := new(big.Int).Sub(p2.X, p1.X)
-		m.Sub(p1.Y, p2.Y)
-		rhs := new(big.Int).Sub(p1.X, p2.X)
+		m.Sub(p2.Y, p1.Y)
+		rhs := new(big.Int).Sub(p2.X, p1.X)
 		rhs.ModInverse(rhs, p1.Curve.P)
 		m.Mul(m, rhs)
 	}
@@ -135,6 +126,9 @@ func Add(p1, p2 *Point) *Point {
 	y.Mod(y, p1.Curve.P)
 
 	res := NewPoint(x, y, p1.Curve)
+	if debugAdd {
+		fmt.Printf("[ADD] result: (%v, %v) + (%v, %v) = (%v, %v)\n", p1.X, p1.Y, p2.X, p2.Y, res.X, res.Y)
+	}
 	return res
 }
 
