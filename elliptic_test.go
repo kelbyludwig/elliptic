@@ -1,7 +1,6 @@
 package elliptic
 
 import (
-	"fmt"
 	"math/big"
 	"testing"
 )
@@ -11,15 +10,17 @@ func TestAddition(t *testing.T) {
 	x := NewPoint(big.NewInt(16), big.NewInt(5), curve)
 	y := NewPoint(big.NewInt(16), big.NewInt(5), curve)
 	z := Add(x, y)
-	t.Errorf("TestAddition: (%v,%v)\n", z.X, z.Y)
+	if z.X.Cmp(big.NewInt(20)) != 0 || z.Y.Cmp(big.NewInt(20)) != 0 {
+		t.Errorf("(20,20) != (%v, %v)\n", z.X, z.Y)
+	}
 }
 
 func TestScalarMult(t *testing.T) {
 	curve := NewCurve(big.NewInt(9), big.NewInt(17), big.NewInt(23))
 	x := NewPoint(big.NewInt(16), big.NewInt(5), curve)
-	fmt.Printf("Original p : (%v, %v)\n", x.X, x.Y)
-	for i := int64(0); i < 10; i++ {
-		xp := ScalarMult(x, big.NewInt(i))
-		fmt.Printf("%vp: (%v, %v)\n", i, xp.X, xp.Y)
+	xp := new(Point)
+	xp = ScalarMult(x, big.NewInt(9))
+	if xp.X.Cmp(big.NewInt(4)) != 0 || xp.Y.Cmp(big.NewInt(5)) != 0 {
+		t.Errorf("(4,5) != (%v,%v)\n", xp.X, xp.Y)
 	}
 }

@@ -1,14 +1,6 @@
 package elliptic
 
-import (
-	"fmt"
-	"math/big"
-)
-
-var debugAdd bool = true
-var debugScalarMult bool = false
-var debugSet bool = false
-var debugInverse bool = false
+import "math/big"
 
 //Curve represents an equation of the form: y^2 = x^3 + A*x + B
 type Curve struct {
@@ -61,21 +53,11 @@ func Identity(c *Curve) *Point {
 //Add sets p to the result of p1 + p2 and returns p
 func Add(p1, p2 *Point) *Point {
 
-	if debugAdd {
-		fmt.Printf("[ADD] POINT ADDITION: (%v,%v) + (%v,%v)\n", p1.X, p1.Y, p2.X, p2.Y)
-	}
-
 	if p1.IsIdentity() {
-		if debugAdd {
-			fmt.Printf("[ADD] p1 is identity\n")
-		}
 		return new(Point).Set(p2)
 	}
 
 	if p2.IsIdentity() {
-		if debugAdd {
-			fmt.Printf("[ADD] p2 is identity\n")
-		}
 		return new(Point).Set(p1)
 	}
 
@@ -83,31 +65,27 @@ func Add(p1, p2 *Point) *Point {
 	inverse = Inverse(inverse)
 
 	if p1.Equals(inverse) {
-		if debugAdd {
-			fmt.Printf("[ADD] p1 is equal to the inverse of p2\n")
-		}
 		id := Identity(p1.Curve)
 		return id
 	}
 
 	m := big.NewInt(0)
 	if p1.Equals(p2) {
-		//This is just an ugly way of saying: m := (3 * p1.X ^ 2 + a) / 2 * p1.Y
-		m.Exp(p1.X, big.NewInt(2), p1.Curve.P)
-		m.Mul(m, big.NewInt(3))
+		//Point doubling
+		m = new(big.Int).Exp(p1.X, big.NewInt(2), p1.Curve.P)
+		m.Mul(big.NewInt(3), m)
 		m.Add(m, p1.Curve.A)
-		rhs := new(big.Int).Mul(big.NewInt(2), p1.Y)
-		rhs.ModInverse(rhs, p1.Curve.P)
-		m.Mul(m, rhs)
+		inv := new(big.Int).Mul(big.NewInt(2), p1.Y)
+		inv.ModInverse(inv, p1.Curve.P)
+		m.Mul(m, inv)
+		m = m.Mod(m, p1.Curve.P)
 	} else {
-		if debugAdd {
-			fmt.Printf("[ADD] p1 is not equal to p2: (%v, %v) != (%v, %v)\n", p1.X, p1.Y, p2.X, p2.Y)
-		}
-		//This is just an ugly way of saying: m := (p2.Y - p1.Y) / (p2.X - p1.X)
-		m.Sub(p2.Y, p1.Y)
-		rhs := new(big.Int).Sub(p2.X, p1.X)
-		rhs.ModInverse(rhs, p1.Curve.P)
-		m.Mul(m, rhs)
+		m = new(big.Int).Sub(p1.Y, p2.Y)
+		inv := new(big.Int).Sub(p1.X, p2.X)
+		inv.ModInverse(inv, p1.Curve.P)
+		inv = inv.Mod(inv, p1.Curve.P)
+		m = m.Mul(m, inv)
+		m = m.Mod(m, p1.Curve.P)
 	}
 
 	x := big.NewInt(0)
@@ -119,36 +97,26 @@ func Add(p1, p2 *Point) *Point {
 	x.Sub(x, p2.X)
 	x.Mod(x, p1.Curve.P)
 
-	//This is an ugly way of saying: y := m * (p1.X - x) - p1.Y
 	y.Sub(p1.X, x)
 	y.Mul(m, y)
 	y.Sub(y, p1.Y)
 	y.Mod(y, p1.Curve.P)
 
 	res := NewPoint(x, y, p1.Curve)
-	if debugAdd {
-		fmt.Printf("[ADD] result: (%v, %v) + (%v, %v) = (%v, %v)\n", p1.X, p1.Y, p2.X, p2.Y, res.X, res.Y)
-	}
 	return res
 }
 
 //ScalarMult returns k*pi. If k is zero the identity point is returned
 func ScalarMult(pi *Point, k *big.Int) *Point {
-	if big.NewInt(0).Cmp(k) == 0 {
-		return Identity(pi.Curve)
-	}
-	p := new(Point).Set(pi)
-	for i := big.NewInt(1); i.Cmp(k) != 0; i.Add(i, big.NewInt(1)) {
-		if debugScalarMult {
-			fmt.Printf("[MULT] %v of %v: ", new(big.Int).Add(i, big.NewInt(1)), k)
-			fmt.Printf("p:(%v, %v) + pi:(%v, %v) = ", p.X, p.Y, pi.X, pi.Y)
+	n := new(Point).Set(pi)
+	r := Identity(pi.Curve)
+	for bit := 0; bit < k.BitLen(); bit++ {
+		if k.Bit(bit) == 1 {
+			r = Add(r, n)
 		}
-		p = Add(p, pi)
-		if debugScalarMult {
-			fmt.Printf("(%v, %v)\n", p.X, p.Y)
-		}
+		n = Add(n, n)
 	}
-	return p
+	return r
 }
 
 //IsIdentity returns true if p is the identity point.
