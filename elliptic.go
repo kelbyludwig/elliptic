@@ -1,6 +1,9 @@
 package elliptic
 
-import "math/big"
+import (
+	"crypto/rand"
+	"math/big"
+)
 
 //Curve represents an equation of the form: y^2 = x^3 + A*x + B
 type Curve struct {
@@ -24,6 +27,15 @@ func NewCurve(a, b, p *big.Int) *Curve {
 	return curve
 }
 
+//Identity returns the identity point on Curve c.
+func Identity(c *Curve) *Point {
+	p := new(Point)
+	p.Curve = c
+	p.X = new(big.Int)
+	p.Y = new(big.Int)
+	return p
+}
+
 func (c *Curve) equals(ci *Curve) bool {
 	if c.A.Cmp(ci.A) == 0 &&
 		c.B.Cmp(ci.B) == 0 &&
@@ -41,13 +53,29 @@ func NewPoint(x, y *big.Int, curve *Curve) *Point {
 	return p
 }
 
-//Identity returns the identity point on Curve c.
-func Identity(c *Curve) *Point {
-	p := new(Point)
-	p.Curve = c
-	p.X = new(big.Int)
-	p.Y = new(big.Int)
+//Set sets p to the value pi and returns p. This clones the bigints within Point.
+func (p *Point) Set(pi *Point) *Point {
+	p.X = new(big.Int).Set(pi.X)
+	p.Y = new(big.Int).Set(pi.Y)
+	p.Nonzero = pi.Nonzero
+	p.Curve = pi.Curve
 	return p
+}
+
+//IsIdentity returns true if p is the identity point.
+func (p *Point) IsIdentity() bool {
+	if p.Nonzero {
+		return false
+	}
+	return true
+}
+
+//Equals returns true if p is the same point as pi
+func (p *Point) Equals(pi *Point) bool {
+	if p.X.Cmp(pi.X) == 0 && p.Y.Cmp(pi.Y) == 0 {
+		return true
+	}
+	return false
 }
 
 //Add returns the result of p1 + p2
@@ -119,22 +147,6 @@ func ScalarMult(pi *Point, k *big.Int) *Point {
 	return r
 }
 
-//IsIdentity returns true if p is the identity point.
-func (p *Point) IsIdentity() bool {
-	if p.Nonzero {
-		return false
-	}
-	return true
-}
-
-//Equals returns true if p is the same point as pi
-func (p *Point) Equals(pi *Point) bool {
-	if p.X.Cmp(pi.X) == 0 && p.Y.Cmp(pi.Y) == 0 {
-		return true
-	}
-	return false
-}
-
 //Inverse returns pi's inverse
 func Inverse(pi *Point) *Point {
 	ny := new(big.Int).Neg(pi.Y)
@@ -143,11 +155,22 @@ func Inverse(pi *Point) *Point {
 	return p
 }
 
-//Set sets p to the value pi and returns p. This clones the bigints within Point.
-func (p *Point) Set(pi *Point) *Point {
-	p.X = new(big.Int).Set(pi.X)
-	p.Y = new(big.Int).Set(pi.Y)
-	p.Nonzero = pi.Nonzero
-	p.Curve = pi.Curve
-	return p
+//Assorted functions that may fit better somewhere else.
+func (curve *Curve) GenerateKeypair() (secret *big.Int, public *Point) {
+	if curve.Base == nil {
+		panic("Base Point not defined for curve!")
+	}
+	//Generate a secret group operation scalar
+	order := len(curve.P.Bytes())
+	randBuf := make([]byte, order)
+	_, err := rand.Read(randBuf)
+	if err != nil {
+		panic(err)
+	}
+	secret = new(big.Int).SetBytes(randBuf)
+	secret = secret.Mod(secret, curve.P)
+
+	//Scale the generator to create a public key
+	public = ScalarMult(curve.Base, secret)
+	return
 }
