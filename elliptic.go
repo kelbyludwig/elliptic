@@ -139,28 +139,24 @@ func Add(p1, p2 *Point) *Point {
 func ScalarMult(pi *Point, k *big.Int) *Point {
 	n := new(Point).Set(pi)
 	r := Identity(pi.Curve)
-	fmt.Printf("[DEBUG] Original n: (%v, %v)\n", n.X, n.Y)
+	fmt.Printf("[DEBUG] Original kp: %v * (%v, %v)\n", k, n.X, n.Y)
 	if k.Cmp(big.NewInt(0)) == 0 {
 		return r
 	}
 	if k.Cmp(big.NewInt(1)) == 0 {
 		return n
 	}
-	fmt.Printf("[DEBUG] k: %b\n", k)
 	for bit := 0; bit < k.BitLen(); bit++ {
-		fmt.Printf("\tbit %v", bit)
 		if k.Bit(bit) == 1 {
-			fmt.Printf(" set\n")
 			fmt.Printf("\tInner: (%v, %v) + (%v, %v) = ", r.X, r.Y, n.X, n.Y)
 			r = Add(r, n)
 			fmt.Printf("(%v, %v)\n", r.X, r.Y)
-		} else {
-			fmt.Printf(" not set\n")
 		}
 		fmt.Printf("\tOuter: (%v, %v) + (%v, %v) = ", n.X, n.Y, n.X, n.Y)
 		n = Add(n, n)
 		fmt.Printf("(%v, %v)\n", n.X, n.Y)
 	}
+	fmt.Printf("\tFinal result: (%v, %v)\n", r.X, r.Y)
 	return r
 }
 
