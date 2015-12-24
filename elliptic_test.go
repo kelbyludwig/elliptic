@@ -1,7 +1,6 @@
 package elliptic
 
 import (
-	"fmt"
 	"math/big"
 	"testing"
 )
@@ -47,9 +46,9 @@ func TestKeyPair(t *testing.T) {
 func TestOrder(t *testing.T) {
 	curve := NewCurve(big.NewInt(9), big.NewInt(17), big.NewInt(23))
 	base := NewPoint(big.NewInt(16), big.NewInt(5), curve)
-	for i := 0; i < 28; i++ {
-		p := ScalarMult(base, big.NewInt(int64(i)))
-		fmt.Printf("%v: (%v, %v)\n", i, p.X, p.Y)
+	p := ScalarMult(base, big.NewInt(32))
+	if !p.IsIdentity() {
+		t.Errorf("Order test failed!\n")
 	}
 }
 
@@ -59,6 +58,7 @@ func TestCommutativity(t *testing.T) {
 	p2 := NewPoint(big.NewInt(12), big.NewInt(17), curve)
 	r1 := Add(p1, p2)
 	r2 := Add(p2, p1)
-	fmt.Printf("r1: (%v, %v)\n", r1.X, r1.Y)
-	fmt.Printf("r2: (%v, %v)\n", r2.X, r2.Y)
+	if !r2.Equals(r1) {
+		t.Errorf("Commutatitivity test failed!\n")
+	}
 }

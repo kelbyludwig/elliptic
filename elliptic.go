@@ -2,7 +2,6 @@ package elliptic
 
 import (
 	"crypto/rand"
-	"fmt"
 	"math/big"
 )
 
@@ -110,7 +109,9 @@ func Add(p1, p2 *Point) *Point {
 		m = m.Mod(m, p1.Curve.P)
 	} else {
 		m = new(big.Int).Sub(p2.Y, p1.Y)
+		m = m.Mod(m, p1.Curve.P)
 		inv := new(big.Int).Sub(p2.X, p1.X)
+		inv = inv.Mod(inv, p1.Curve.P)
 		inv = inv.ModInverse(inv, p1.Curve.P)
 		inv = inv.Mod(inv, p1.Curve.P)
 		m = m.Mul(m, inv)
@@ -139,7 +140,6 @@ func Add(p1, p2 *Point) *Point {
 func ScalarMult(pi *Point, k *big.Int) *Point {
 	n := new(Point).Set(pi)
 	r := Identity(pi.Curve)
-	fmt.Printf("[DEBUG] Original kp: %v * (%v, %v)\n", k, n.X, n.Y)
 	if k.Cmp(big.NewInt(0)) == 0 {
 		return r
 	}
@@ -148,15 +148,10 @@ func ScalarMult(pi *Point, k *big.Int) *Point {
 	}
 	for bit := 0; bit < k.BitLen(); bit++ {
 		if k.Bit(bit) == 1 {
-			fmt.Printf("\tInner: (%v, %v) + (%v, %v) = ", r.X, r.Y, n.X, n.Y)
 			r = Add(r, n)
-			fmt.Printf("(%v, %v)\n", r.X, r.Y)
 		}
-		fmt.Printf("\tOuter: (%v, %v) + (%v, %v) = ", n.X, n.Y, n.X, n.Y)
 		n = Add(n, n)
-		fmt.Printf("(%v, %v)\n", n.X, n.Y)
 	}
-	fmt.Printf("\tFinal result: (%v, %v)\n", r.X, r.Y)
 	return r
 }
 
