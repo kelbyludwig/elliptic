@@ -52,3 +52,13 @@ func TestOrder(t *testing.T) {
 		fmt.Printf("%v: (%v, %v)\n", i, p.X, p.Y)
 	}
 }
+
+func TestCommutativity(t *testing.T) {
+	curve := NewCurve(big.NewInt(9), big.NewInt(17), big.NewInt(23))
+	p1 := NewPoint(big.NewInt(16), big.NewInt(5), curve)
+	p2 := NewPoint(big.NewInt(12), big.NewInt(17), curve)
+	r1 := Add(p1, p2)
+	r2 := Add(p2, p1)
+	fmt.Printf("r1: (%v, %v)\n", r1.X, r1.Y)
+	fmt.Printf("r2: (%v, %v)\n", r2.X, r2.Y)
+}
