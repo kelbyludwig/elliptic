@@ -2,6 +2,7 @@ package elliptic
 
 import (
 	"crypto/rand"
+	"fmt"
 	"math/big"
 )
 
@@ -108,9 +109,9 @@ func Add(p1, p2 *Point) *Point {
 		m.Mul(m, inv)
 		m = m.Mod(m, p1.Curve.P)
 	} else {
-		m = new(big.Int).Sub(p1.Y, p2.Y)
-		inv := new(big.Int).Sub(p1.X, p2.X)
-		inv.ModInverse(inv, p1.Curve.P)
+		m = new(big.Int).Sub(p2.Y, p1.Y)
+		inv := new(big.Int).Sub(p2.X, p2.X)
+		inv = inv.ModInverse(inv, p1.Curve.P)
 		inv = inv.Mod(inv, p1.Curve.P)
 		m = m.Mul(m, inv)
 		m = m.Mod(m, p1.Curve.P)
@@ -120,15 +121,15 @@ func Add(p1, p2 *Point) *Point {
 	y := big.NewInt(0)
 
 	//This is an ugly way of saying: x := m^2 - p1.X - p2.X
-	x.Exp(m, big.NewInt(2), p1.Curve.P)
-	x.Sub(x, p1.X)
-	x.Sub(x, p2.X)
-	x.Mod(x, p1.Curve.P)
+	x = x.Exp(m, big.NewInt(2), p1.Curve.P)
+	x = x.Sub(x, p1.X)
+	x = x.Sub(x, p2.X)
+	x = x.Mod(x, p1.Curve.P)
 
-	y.Sub(p1.X, x)
-	y.Mul(m, y)
-	y.Sub(y, p1.Y)
-	y.Mod(y, p1.Curve.P)
+	y = y.Sub(p1.X, x)
+	y = y.Mul(m, y)
+	y = y.Sub(y, p1.Y)
+	y = y.Mod(y, p1.Curve.P)
 
 	res := NewPoint(x, y, p1.Curve)
 	return res
@@ -138,11 +139,27 @@ func Add(p1, p2 *Point) *Point {
 func ScalarMult(pi *Point, k *big.Int) *Point {
 	n := new(Point).Set(pi)
 	r := Identity(pi.Curve)
+	fmt.Printf("[DEBUG] Original n: (%v, %v)\n", n.X, n.Y)
+	if k.Cmp(big.NewInt(0)) == 0 {
+		return r
+	}
+	if k.Cmp(big.NewInt(1)) == 0 {
+		return n
+	}
+	fmt.Printf("[DEBUG] k: %b\n", k)
 	for bit := 0; bit < k.BitLen(); bit++ {
+		fmt.Printf("\tbit %v", bit)
 		if k.Bit(bit) == 1 {
+			fmt.Printf(" set\n")
+			fmt.Printf("\tInner: (%v, %v) + (%v, %v) = ", r.X, r.Y, n.X, n.Y)
 			r = Add(r, n)
+			fmt.Printf("(%v, %v)\n", r.X, r.Y)
+		} else {
+			fmt.Printf(" not set\n")
 		}
+		fmt.Printf("\tOuter: (%v, %v) + (%v, %v) = ", n.X, n.Y, n.X, n.Y)
 		n = Add(n, n)
+		fmt.Printf("(%v, %v)\n", n.X, n.Y)
 	}
 	return r
 }
