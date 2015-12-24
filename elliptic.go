@@ -102,15 +102,15 @@ func Add(p1, p2 *Point) *Point {
 	if p1.Equals(p2) {
 		//Point doubling
 		m = new(big.Int).Exp(p1.X, big.NewInt(2), p1.Curve.P)
-		m.Mul(big.NewInt(3), m)
-		m.Add(m, p1.Curve.A)
+		m = m.Mul(big.NewInt(3), m)
+		m = m.Add(m, p1.Curve.A)
 		inv := new(big.Int).Mul(big.NewInt(2), p1.Y)
-		inv.ModInverse(inv, p1.Curve.P)
-		m.Mul(m, inv)
+		inv = inv.ModInverse(inv, p1.Curve.P)
+		m = m.Mul(m, inv)
 		m = m.Mod(m, p1.Curve.P)
 	} else {
 		m = new(big.Int).Sub(p2.Y, p1.Y)
-		inv := new(big.Int).Sub(p2.X, p2.X)
+		inv := new(big.Int).Sub(p2.X, p1.X)
 		inv = inv.ModInverse(inv, p1.Curve.P)
 		inv = inv.Mod(inv, p1.Curve.P)
 		m = m.Mul(m, inv)
