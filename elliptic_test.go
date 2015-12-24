@@ -1,6 +1,7 @@
 package elliptic
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 )
@@ -41,4 +42,13 @@ func TestKeyPair(t *testing.T) {
 		t.Errorf("2. Public key did not match expected scalar multiplcation!\n")
 	}
 
+}
+
+func TestOrder(t *testing.T) {
+	curve := NewCurve(big.NewInt(9), big.NewInt(17), big.NewInt(23))
+	base := NewPoint(big.NewInt(16), big.NewInt(5), curve)
+	for i := 0; i < 28; i++ {
+		p := ScalarMult(base, big.NewInt(int64(i)))
+		fmt.Printf("%v: (%v, %v)\n", i, p.X, p.Y)
+	}
 }
